@@ -1,0 +1,20 @@
+<package>
+  <description brief="hh_ardrone">
+
+     Test
+
+  </description>
+  <author> (...@mail.com)</author>
+  <license>BSD</license>
+  <review status="unreviewed" notes=""/>
+  <url></url>
+  <depend package="ardrone_autonomy"/>
+  <depend package="cv_bridge"/>
+  <depend package="sensor_msgs"/>
+  <depend package="std_srvs"/>
+  <depend package="std_msgs"/>
+  <depend package="geometry_msgs"/>
+  <depend package="tum_ardrone"/>
+  <rosdep name="qt4"/>
+  <export><cpp cflags="-I${prefix}/srv/cpp -I${prefix}/msg/cpp"/></export>
+</package>

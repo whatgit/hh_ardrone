@@ -1,0 +1,16 @@
+<launch>
+	<!-- Launches the tum_ardrone StateEstimator -->
+	<node name="drone_stateestimation" pkg="tum_ardrone" type="drone_stateestimation" output="screen" clear_params="true">
+	    <param name="publishFreq" value="30" /> <!-- Publish Frequency --> 
+	    <param name="calibFile" value="~/.ros/camera_info/ardrone_front.yaml" /> <!-- Camera Calibration --> 
+	</node>
+	
+	<!-- Configure Dynamically Reconfigurable Parameters -->
+	<node name="setPTAM" pkg="dynamic_reconfigure" type="dynparam" args="set /drone_stateestimation UsePTAM false">
+	</node>
+	<node name="setNavdata" pkg="dynamic_reconfigure" type="dynparam" args="set /drone_stateestimation UseNavdata true">
+	</node>
+	<node name="setControl" pkg="dynamic_reconfigure" type="dynparam" args="set /drone_stateestimation UseControlGains true">
+	</node>
+	
+</launch>
