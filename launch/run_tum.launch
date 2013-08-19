@@ -1,4 +1,8 @@
 <launch>
+
+  <arg name ="bag_file_name" default="gym2_3.bag"/>
+  <arg name ="bag_src_path" default="/media/mayara/New\ Volume/Thesis/Warehouse\ Bag/Lab"/>
+
 	<!-- Launches the tum_ardrone StateEstimator -->
 
 	<arg name="camera" default="/ardrone/"/> <!-- camera must be set at launch -->
@@ -8,7 +12,6 @@
 	
 	<node name="drone_stateestimation" pkg="tum_ardrone" type="drone_stateestimation" output="screen" clear_params="true">
 	    <param name="publishFreq" value="30" /> <!-- Publish Frequency --> 
-	    <param name="calibFile" value="~/.ros/camera_info/ardrone_front.yaml" /> <!-- Camera Calibration --> 
 	    <remap from="ardrone/image_raw" to="ardrone/image_rect"  />
 	</node>
 	
@@ -17,12 +20,24 @@
 	</node>
 	<node name="setNavdata" pkg="dynamic_reconfigure" type="dynparam" args="set /drone_stateestimation UseNavdata true">
 	</node>
-	<node name="setControl" pkg="dynamic_reconfigure" type="dynparam" args="set /drone_stateestimation UseControlGains true	">
+	<node name="setControl" pkg="dynamic_reconfigure" type="dynparam" args="set /drone_stateestimation UseControlGains false">
 	</node>
 
 	<!-- Launch the Node Generator -->
 	<node name="tag_generator" pkg="hh_ardrone" type="node_generator" output="screen" clear_params="true">
-	    <param name="Threshold" value="5" /> <!-- Publish Frequency --> 
 	</node>
 	
+	<!-- Play the Bag File -->
+	<node name="bag_player" pkg="rosbag" type="play" output="screen" args="--clock $(arg bag_src_path)/$(arg bag_file_name)">
+	</node>
+
+	<param name="use_sim_time" value="true" />
+
+	<!-- Launch initPTAM -->
+	<node name="init_PTAM" pkg="hh_ardrone" type="initPTAM" output="screen" clear_params="true">
+	    <param name="T1" value="40" /> <!-- T1 --> 
+	    <param name="T2" value="41" /> <!-- T2 --> 
+	</node>
+	
+
 </launch>

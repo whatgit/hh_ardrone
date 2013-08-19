@@ -1,0 +1,10 @@
+<launch>
+  <arg name ="file_name" default="gym2_3.bag"/>
+  <arg name ="dest_path" default="/media/mayara/New\ Volume/Thesis/Warehouse\ Bag/Lab"/>
+  <arg name ="topic1" default="/ardrone/navdata"/>
+  <arg name ="topic2" default="/ardrone/image_raw"/>
+  <arg name ="topic3" default="/ardrone/camera_info"/>
+  <arg name ="topic4" default="/cmd_vel"/>
+  <node name ="recorder" pkg="rosbag" type="record" output="screen" args="-O $(arg dest_path)/$(arg file_name) $(arg topic1) $(arg topic2) $(arg topic3) $(arg topic4)">
+  </node>
+</launch>

@@ -15,6 +15,10 @@
   <depend package="std_msgs"/>
   <depend package="geometry_msgs"/>
   <depend package="tum_ardrone"/>
+
+  <depend package="roscpp"/>
+  <depend package="image_transport"/>
+
   <rosdep name="qt4"/>
   <export><cpp cflags="-I${prefix}/srv/cpp -I${prefix}/msg/cpp"/></export>
 </package>

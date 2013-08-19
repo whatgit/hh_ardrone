@@ -1,0 +1,17 @@
+<!-- example launch file for mono_odometer -->
+<launch>
+
+  <arg name="camera" default="/ardrone/"/> <!-- camera must be set at launch -->
+  <node name="image_proc" pkg="image_proc" type="image_proc" ns="$(arg camera)">
+    <remap from="camera_info" to="camera_info"  />
+  </node>
+
+  <node name="houghLine" pkg="hh_ardrone" type="houghLines" output="screen">
+    <remap from="in" to="$(arg camera)/image_rect_color" />
+  </node>
+<!--  <node name="houghLine" pkg="hh_ardrone" type="houghLines" output="screen">
+    <remap from="in" to="ardrone/image_raw"  />
+  </node>
+-->
+  
+</launch>

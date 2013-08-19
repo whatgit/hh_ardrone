@@ -1,0 +1,7 @@
+<!-- example launch file for mono_odometer -->
+<launch>
+  <node name="cvBridge" pkg="hh_ardrone" type="cvBridgeTutorial" output="screen">
+    <remap from="in" to="ardrone/image_raw"  />
+  </node>
+  
+</launch>

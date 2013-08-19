@@ -10,7 +10,7 @@
 #include "tum_ardrone/filter_state.h"
 #include <hh_ardrone/NodeGen.h>
 
-#define MAX_NODE 10
+#define MAX_NODE 40
 
 class NodeGenerator
 {
@@ -41,17 +41,20 @@ private:
 	  int xc;
 	  int yc;
 	  bool tag_found;
+	  float tag_angle;
 	};
 	
 	tag_info *Tag;
 	int currentNode;
 	int lastTagCount;
-	int distanceThreshold;
+	double distanceThreshold;
+	float lastTagAngle;
 
-	void addTagNode(int drone_x, int drone_y, int tag_xc, int tag_yc);
+	bool addTagNode(int drone_x, int drone_y, int tag_xc, int tag_yc, float angle);
 
 public:
-
+	
+	float tagWorldX,tagWorldY;
 	int nodeCount;
 	tag_node *current;
 	tag_node node_array[MAX_NODE];
@@ -59,6 +62,7 @@ public:
 	NodeGenerator();  //Constructor
 	void posCb(const tum_ardrone::filter_stateConstPtr);
 	void navCb(const ardrone_autonomy::NavdataConstPtr navdataPtr);	
+	void camPix2CorWorldFrame(float x, float y, float z);
 };
 
-#endif  /* __DRONECONTROL_H */
+#endif  /* __NODEGENERATOR_H */

@@ -1,0 +1,26 @@
+<launch>
+
+  <arg name ="bag_file_name" default="gym2_3.bag"/>
+  <arg name ="bag_src_path" default="/media/mayara/New\ Volume/Thesis/Warehouse\ Bag/Lab"/>
+
+	<!-- Launches the ethzasl_ptam -->
+
+	<arg name="camera" default="/ardrone/"/> <!-- camera must be set at launch -->
+    	<node name="image_proc" pkg="image_proc" type="image_proc" ns="$(arg camera)">
+	<remap from="camera_info" to="camera_info"  />
+    	</node>
+    	<node name="ptam" pkg="ptam" type="ptam" clear_params="true" output="screen">
+	    <remap from="image" to="$(arg camera)/image_rect" />
+            <remap from="pose" to="pose"/>
+	    <rosparam file="$(find ptam)/PtamFixParams_lowresCam.yaml"/>
+    	</node>
+
+	<!-- Launch the Node Generator -->
+	<node name="tag_generator" pkg="hh_ardrone" type="node_generator" output="screen" clear_params="true">
+	</node>
+	
+	<!-- Play the Bag File -->
+	<node name="bag_player" pkg="rosbag" type="play" output="screen" args="$(arg bag_src_path)/$(arg bag_file_name)">
+	</node>
+
+</launch>
