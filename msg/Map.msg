@@ -1,0 +1,9 @@
+float32     drone_x
+float32     drone_y
+float32     drone_z
+float32	    drone_h
+float32	    ImgStamp
+float32     Pillar_x1
+float32     Pillar_y1
+float32     Pillar_x2
+float32     Pillar_y2
