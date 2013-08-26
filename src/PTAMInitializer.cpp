@@ -21,7 +21,7 @@ PTAMInitializer::PTAMInitializer()
 	private_node_handle_.param("T1", T1, 0);
 	private_node_handle_.param("T2", T2, 0);
 
-	cout << "set initialize time T1 to " << T1 << " and T2 to " << T2 << "second"<< endl;
+	cout << "set initialize time T1 to " << T1 << " and T2 to " << T2 << " second"<< endl;
 	start_flag = false;
 	first_space = false;
 	second_space = false;
@@ -51,6 +51,10 @@ void PTAMInitializer::checkTime(){
 	     initPTAM();
 	     second_space = true;
 	  }
+	  if(first_space && second_space)
+	  {
+	     ros::shutdown();
+          }
 	  //cout << "check time" << t0.toSec() << " plus " << T2 << " = " << t0.toSec()+T2 << endl;
 	}
 }
