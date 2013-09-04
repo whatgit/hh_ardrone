@@ -35,7 +35,7 @@ private:
 
   float ddx,ddy,ddz,ddh;
   
-  float image_stamp = 0;
+  int image_stamp = 0;
   int threshold = 50;	//Threshold ( pixel )
 
   //DRAWING PARAMETERS
@@ -53,6 +53,15 @@ private:
   int key_frame1 = 1220;
   int key_frame2 = 1251;
 
+  //HSV Params Defaults
+  //inRange(redOnly, Scalar(100, 5, 13), Scalar(120, 209, 102), redOnly);
+  int minH = 80;
+  int minS = 92;
+  int minV = 13;
+  int maxH = 117;
+  int maxS = 138;
+  int maxV = 102;
+
 
 
 public:
@@ -60,9 +69,9 @@ public:
     : it_(nh_)
   {
 
-    int KF1,KF2;
+    int KF1,KF2,T;
     image_pub_ = it_.advertise("out", 1);
-    image_sub_ = it_.subscribe("in", 1, &ImageConverter::imageCb, this);
+    image_sub_ = it_.subscribe("in", 10, &ImageConverter::imageCb, this);
 
 	dronepose_channel = nh.resolveName("ardrone/predictedPose");
 	nodeout_channel = nh.resolveName("hh_ardrone/houghLine");
@@ -76,12 +85,22 @@ public:
 	ros::NodeHandle private_node_handle_("~");
 	private_node_handle_.param("KF1", KF1, 1220);
 	private_node_handle_.param("KF2", KF2, 1251);
+	private_node_handle_.param("T", T, 60);
     
 	key_frame1 = KF1;
 	key_frame2 = KF2;
+	threshold = T;
 	cout << "set initialize KF to " << KF1 << " and "<< KF2 << endl;
+	cout << "set Threshold to " << T << " pixels" << endl;
 
     cv::namedWindow(WINDOW);
+    createTrackbar( "min H:", WINDOW, &minH, 180, NULL );
+    createTrackbar( "min S:", WINDOW, &minS, 255, NULL );
+    createTrackbar( "min V:", WINDOW, &minV, 255, NULL );
+    createTrackbar( "max H:", WINDOW, &maxH, 180, NULL );
+    createTrackbar( "max S:", WINDOW, &maxS, 255, NULL );
+    createTrackbar( "max V:", WINDOW, &maxV, 255, NULL );
+
   }
 
   ~ImageConverter()
@@ -90,13 +109,34 @@ public:
   }
 
 
-  cv::Mat redFilter(const cv::Mat& src)
+  cv::Mat pillarFilter(const cv::Mat& src)
 {
+   assert(src.type() == CV_8UC3);
+   cv::Mat redOnly;
+   cvtColor(src, redOnly, CV_BGR2HSV);	//Convert to HSV
+   //inRange(redOnly, Scalar(206, 2, 5), Scalar(238, 82, 40), redOnly); 
+   //inRange(redOnly, Scalar(100, 5, 13), Scalar(120, 209, 102), redOnly);
+   //inRange(redOnly, Scalar(100, 5, 13), Scalar(120, 209, 102), redOnly);
+   inRange(redOnly, Scalar(minH, minS, minV), Scalar(maxH, maxS, maxV), redOnly);
+
+   //DRAW CONTOUR STUFF ?
+   vector<vector<Point> > contours;
+   findContours(redOnly.clone(), contours, CV_RETR_EXTERNAL, CV_CHAIN_APPROX_SIMPLE);
+
+   Mat dst = Mat::zeros(src.size(), src.type());
+   drawContours(dst, contours, -1, Scalar::all(255), CV_FILLED);
+
+   return dst;
+   //return redOnly;
+
+/*
     assert(src.type() == CV_8UC3);
     cv::Mat redOnly;
     cv::inRange(src, cv::Scalar(0, 0, 0), cv::Scalar(25, 25, 25), redOnly);
 	//cvInRangeS(imgHSV, cvScalar(170,160,60), cvScalar(180,256,256), imgThresh); 
     return redOnly;
+*/
+
 }
 
 
@@ -126,6 +166,7 @@ void imageCb(const sensor_msgs::ImageConstPtr& msg)
     float drone_x,drone_y,drone_z,drone_h;
     float px1,py1,px2,py2;
 	
+    //ROS_INFO("Got %d images",image_stamp);
     image_stamp++;
     //PTAM init
     if((image_stamp == key_frame1) || (image_stamp == key_frame2))
@@ -159,12 +200,12 @@ void imageCb(const sensor_msgs::ImageConstPtr& msg)
     
     image_pub_.publish(cv_ptr->toImageMsg());
 
-    cv::Mat redOnly = redFilter(cv_ptr->image);
+    cv::Mat pillar = pillarFilter(cv_ptr->image);
 
-    //cv::imshow("redOnly", redOnly);
+    //cv::imshow("pillar", pillar);
     
     cv::Mat dst, cdst,rot;
-    cv::Canny(redOnly, dst, 100, 200, 3);
+    cv::Canny(pillar, dst, 100, 200, 3);
     cv::cvtColor(dst, cdst, CV_GRAY2BGR);
 	
     //ROTATE !!!!
@@ -184,6 +225,7 @@ void imageCb(const sensor_msgs::ImageConstPtr& msg)
 	if(abs(l[0]-l[1]) > threshold)
         {
 	  //cv::line( cdst, cv::Point(l[0], l[1]), cv::Point(l[2], l[3]), cv::Scalar(0,0,255), 3, CV_AA);
+          cv::line( rot, cv::Point(l[0], l[1]), cv::Point(l[2], l[3]), cv::Scalar(0,0,255), 3, CV_AA);
 	  //ROS_INFO("Pilar no. %d x1 : %d, y1 : %d  x2 %d  y2 %d",i ,l[0],l[1],l[2],l[3] );
 	  hh_ardrone::Map node;
 	  node.drone_x = drone_x;
@@ -208,7 +250,7 @@ void imageCb(const sensor_msgs::ImageConstPtr& msg)
 	}     
       }
 
-
+   imshow("Lines",rot);
    //image_stamp++;
 
    //imshow("Trace and Map", mapTraceImg);
