@@ -122,10 +122,15 @@ void NodeGenerator::navCb(const ardrone_autonomy::NavdataConstPtr navdataPtr)
 }
 
 void NodeGenerator::camPix2CorWorldFrame(float x, float y, float z){
-	float Mcx = 0.871576;
-	float Mcy = 0.493151;
-	tagWorldX = x + (((float) Tag->xc - 500)/1000)*(Mcx*z*2);
-	tagWorldY = y + (((float) Tag->yc - 500)/1000)*(Mcy*z*2);
+	
+	float Mcx = 0.871576/2.0;
+	float Mcy = 0.493151/2.0;
+
+	tagWorldX = x + (((((float) Tag->xc / 1000)*640)-320.0)*((2.0*z)/734.3));
+	tagWorldY = y + ((180.0-(((float) Tag->yc / 1000)*360))*((2.0*z)/734.3));
+
+	//tagWorldX = x + (((float) Tag->xc - 500)/1000)*(Mcx*z*2);
+	//tagWorldY = y + (((float) Tag->yc - 500)/1000)*(Mcy*z*2);
 }
 
 
