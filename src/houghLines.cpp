@@ -36,7 +36,7 @@ private:
   float ddx,ddy,ddz,ddh;
   
   int image_stamp = 0;
-  int threshold = 50;	//Threshold ( pixel )
+  int threshold = 40;	//Threshold ( pixel )
 
   //DRAWING PARAMETERS
   int w = 500;
@@ -55,13 +55,19 @@ private:
 
   //HSV Params Defaults
   //inRange(redOnly, Scalar(100, 5, 13), Scalar(120, 209, 102), redOnly);
-  int minH = 80;
-  int minS = 92;
-  int minV = 13;
-  int maxH = 117;
-  int maxS = 138;
-  int maxV = 102;
+  //int minH = 80;
+  //int minS = 33;
+  //int minV = 34;
+  //int maxH = 124;
+  //int maxS = 179;
+  //int maxV = 129;
 
+  int minH = 79;
+  int minS = 22;
+  int minV = 13;
+  int maxH = 145;
+  int maxS = 178;
+  int maxV = 247;
 
 
 public:
@@ -119,6 +125,8 @@ public:
    //inRange(redOnly, Scalar(100, 5, 13), Scalar(120, 209, 102), redOnly);
    inRange(redOnly, Scalar(minH, minS, minV), Scalar(maxH, maxS, maxV), redOnly);
 
+   cv::medianBlur( redOnly, redOnly, 9);
+   
    //DRAW CONTOUR STUFF ?
    vector<vector<Point> > contours;
    findContours(redOnly.clone(), contours, CV_RETR_EXTERNAL, CV_CHAIN_APPROX_SIMPLE);
@@ -205,27 +213,31 @@ void imageCb(const sensor_msgs::ImageConstPtr& msg)
     //cv::imshow("pillar", pillar);
     
     cv::Mat dst, cdst,rot;
-    cv::Canny(pillar, dst, 100, 200, 3);
-    cv::cvtColor(dst, cdst, CV_GRAY2BGR);
+    //cv::Canny(pillar, dst, 100, 200, 3);
+    cv::Canny(pillar, dst, 120, 205, 3);
+    //cv::cvtColor(dst, cdst, CV_GRAY2BGR);
 	
     //ROTATE !!!!
     rotate(dst, -drone_h, rot);
 
+    cv::cvtColor(rot, cdst, CV_GRAY2BGR);
     //imshow("Rotated Image",rot);
 
     std::vector<cv::Vec4i> lines;
 
     //cv::HoughLinesP(dst, lines, 1, CV_PI/180, 50, 50, 10 );
     //cv::HoughLinesP(dst, lines, 1, CV_PI/2, 50, 50, 10 );
-    cv::HoughLinesP(rot, lines, 1, CV_PI/2, 50, 50, 10 );
+    //cv::HoughLinesP(rot, lines, 1, CV_PI/2, 50, 50, 10 );
+    //cv::HoughLinesP(rot, lines, 1, CV_PI/2, 50, 75, 20 );
+    cv::HoughLinesP(rot, lines, 1, CV_PI/2, 50, 60, 20 );
 
     for( size_t i = 0; i < lines.size(); i++ )
     {
         cv::Vec4i l = lines[i];
-	if(abs(l[0]-l[1]) > threshold)
+	if(abs(l[0]-l[2]) > threshold && drone_z > 2.000)
         {
-	  //cv::line( cdst, cv::Point(l[0], l[1]), cv::Point(l[2], l[3]), cv::Scalar(0,0,255), 3, CV_AA);
-          cv::line( rot, cv::Point(l[0], l[1]), cv::Point(l[2], l[3]), cv::Scalar(0,0,255), 3, CV_AA);
+	  cv::line( cdst, cv::Point(l[0], l[1]), cv::Point(l[2], l[3]), cv::Scalar(0,0,255), 3, CV_AA);
+          //cv::line( rot, cv::Point(l[0], l[1]), cv::Point(l[2], l[3]), cv::Scalar(0,0,255), 3, CV_AA);
 	  //ROS_INFO("Pilar no. %d x1 : %d, y1 : %d  x2 %d  y2 %d",i ,l[0],l[1],l[2],l[3] );
 	  hh_ardrone::Map node;
 	  node.drone_x = drone_x;
@@ -250,11 +262,11 @@ void imageCb(const sensor_msgs::ImageConstPtr& msg)
 	}     
       }
 
-   imshow("Lines",rot);
+   //imshow("Lines",cdst);
    //image_stamp++;
 
    //imshow("Trace and Map", mapTraceImg);
-   cv::imshow("Trace and Map", mapTraceImg);	
+   //cv::imshow("Trace and Map", mapTraceImg);	
 
   }
 
