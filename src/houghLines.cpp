@@ -36,7 +36,7 @@ private:
   float ddx,ddy,ddz,ddh;
   
   int image_stamp = 0;
-  int threshold = 40;	//Threshold ( pixel )
+  int threshold = 25;	//Threshold ( pixel )
 
   //DRAWING PARAMETERS
   int w = 500;
@@ -98,7 +98,7 @@ public:
 	threshold = T;
 	cout << "set initialize KF to " << KF1 << " and "<< KF2 << endl;
 	cout << "set Threshold to " << T << " pixels" << endl;
-
+/*
     cv::namedWindow(WINDOW);
     createTrackbar( "min H:", WINDOW, &minH, 180, NULL );
     createTrackbar( "min S:", WINDOW, &minS, 255, NULL );
@@ -106,6 +106,7 @@ public:
     createTrackbar( "max H:", WINDOW, &maxH, 180, NULL );
     createTrackbar( "max S:", WINDOW, &maxS, 255, NULL );
     createTrackbar( "max V:", WINDOW, &maxV, 255, NULL );
+*/
 
   }
 
@@ -218,7 +219,10 @@ void imageCb(const sensor_msgs::ImageConstPtr& msg)
     //cv::cvtColor(dst, cdst, CV_GRAY2BGR);
 	
     //ROTATE !!!!
-    rotate(dst, -drone_h, rot);
+    //rotate(dst, -drone_h, rot);
+    Point2f src_center(dst.cols/2.0F, dst.rows/2.0F);
+    Mat rot_mat = getRotationMatrix2D(src_center, drone_h, 1.0);
+    warpAffine(dst, rot, rot_mat, dst.size());
 
     cv::cvtColor(rot, cdst, CV_GRAY2BGR);
     //imshow("Rotated Image",rot);
@@ -229,7 +233,7 @@ void imageCb(const sensor_msgs::ImageConstPtr& msg)
     //cv::HoughLinesP(dst, lines, 1, CV_PI/2, 50, 50, 10 );
     //cv::HoughLinesP(rot, lines, 1, CV_PI/2, 50, 50, 10 );
     //cv::HoughLinesP(rot, lines, 1, CV_PI/2, 50, 75, 20 );
-    cv::HoughLinesP(rot, lines, 1, CV_PI/2, 50, 60, 20 );
+    cv::HoughLinesP(rot, lines, 1, CV_PI/2, 50, 50, 20 );
 
     for( size_t i = 0; i < lines.size(); i++ )
     {
