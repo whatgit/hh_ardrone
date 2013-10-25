@@ -1,3 +1,17 @@
+ /**
+ *  This file is part of hh_ardrone.
+ *
+ *  Copyright 2013 Yuantao Fan <fanyuantao@gmail.com> & Maytheewat Aramrattana <iamhere366@gmail.com>
+ *
+ *  hh_ardrone is free software: you can redistribute it and/or modify
+ *  it under the terms of the GNU General Public License as published by
+ *  the Free Software Foundation, either version 3 of the License, or
+ *  (at your option) any later version.
+ *
+ *  You should have received a copy of the GNU General Public License
+ *  along with hh_ardrone.  If not, see <http://www.gnu.org/licenses/>.
+ */
+
 #include <ros/ros.h>
 #include <image_transport/image_transport.h>
 #include <cv_bridge/cv_bridge.h>
@@ -7,7 +21,8 @@
 #include <opencv2/core/core.hpp>
 #include <iostream>
 #include "tum_ardrone/filter_state.h"
-#include <hh_ardrone/Map.h>
+//#include <hh_ardrone/Map.h>
+#include <hh_ardrone/map_info_msg.h>
 #include <std_msgs/String.h>
 
 namespace enc = sensor_msgs::image_encodings;
@@ -80,10 +95,10 @@ public:
     image_sub_ = it_.subscribe("in", 10, &ImageConverter::imageCb, this);
 
 	dronepose_channel = nh.resolveName("ardrone/predictedPose");
-	nodeout_channel = nh.resolveName("hh_ardrone/houghLine");
+	nodeout_channel = nh.resolveName("hh_ardrone/map_info");
 
 	subPose = nh.subscribe(dronepose_channel,10, &ImageConverter::posCb, this);
-	pubNodegen   = nh.advertise<hh_ardrone::Map>(nodeout_channel,1);
+	pubNodegen   = nh.advertise<hh_ardrone::map_info_msg>(nodeout_channel,1);
 
 	ToPTAM_channel = nh.resolveName("tum_ardrone/com");
 	pubToPTAM = nh.advertise<std_msgs::String>(ToPTAM_channel,50);
@@ -243,7 +258,7 @@ void imageCb(const sensor_msgs::ImageConstPtr& msg)
 	  cv::line( cdst, cv::Point(l[0], l[1]), cv::Point(l[2], l[3]), cv::Scalar(0,0,255), 3, CV_AA);
           //cv::line( rot, cv::Point(l[0], l[1]), cv::Point(l[2], l[3]), cv::Scalar(0,0,255), 3, CV_AA);
 	  //ROS_INFO("Pilar no. %d x1 : %d, y1 : %d  x2 %d  y2 %d",i ,l[0],l[1],l[2],l[3] );
-	  hh_ardrone::Map node;
+	  hh_ardrone::map_info_msg node;
 	  node.drone_x = drone_x;
 	  node.drone_y = drone_y;
 	  node.drone_z = drone_z;
