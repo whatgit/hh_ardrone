@@ -21,7 +21,6 @@
 #include <opencv2/core/core.hpp>
 #include <iostream>
 #include "tum_ardrone/filter_state.h"
-//#include <hh_ardrone/Map.h>
 #include <hh_ardrone/map_info_msg.h>
 #include <std_msgs/String.h>
 
@@ -40,7 +39,6 @@ private:
   image_transport::Subscriber image_sub_;
   image_transport::Publisher image_pub_;
 
-	// Modify  = =
   ros::NodeHandle nh;
   std::string dronepose_channel;
   std::string nodeout_channel;
@@ -67,15 +65,6 @@ private:
   ros::Publisher pubToPTAM;
   int key_frame1 = 1220;
   int key_frame2 = 1251;
-
-  //HSV Params Defaults
-  //inRange(redOnly, Scalar(100, 5, 13), Scalar(120, 209, 102), redOnly);
-  //int minH = 80;
-  //int minS = 33;
-  //int minV = 34;
-  //int maxH = 124;
-  //int maxS = 179;
-  //int maxV = 129;
 
   int minH = 79;
   int minS = 22;
@@ -113,15 +102,6 @@ public:
 	threshold = T;
 	cout << "set initialize KF to " << KF1 << " and "<< KF2 << endl;
 	cout << "set Threshold to " << T << " pixels" << endl;
-/*
-    cv::namedWindow(WINDOW);
-    createTrackbar( "min H:", WINDOW, &minH, 180, NULL );
-    createTrackbar( "min S:", WINDOW, &minS, 255, NULL );
-    createTrackbar( "min V:", WINDOW, &minV, 255, NULL );
-    createTrackbar( "max H:", WINDOW, &maxH, 180, NULL );
-    createTrackbar( "max S:", WINDOW, &maxS, 255, NULL );
-    createTrackbar( "max V:", WINDOW, &maxV, 255, NULL );
-*/
 
   }
 
@@ -136,14 +116,12 @@ public:
    assert(src.type() == CV_8UC3);
    cv::Mat redOnly;
    cvtColor(src, redOnly, CV_BGR2HSV);	//Convert to HSV
-   //inRange(redOnly, Scalar(206, 2, 5), Scalar(238, 82, 40), redOnly); 
-   //inRange(redOnly, Scalar(100, 5, 13), Scalar(120, 209, 102), redOnly);
-   //inRange(redOnly, Scalar(100, 5, 13), Scalar(120, 209, 102), redOnly);
+
    inRange(redOnly, Scalar(minH, minS, minV), Scalar(maxH, maxS, maxV), redOnly);
 
    cv::medianBlur( redOnly, redOnly, 9);
    
-   //DRAW CONTOUR STUFF ?
+   //Draw Contour
    vector<vector<Point> > contours;
    findContours(redOnly.clone(), contours, CV_RETR_EXTERNAL, CV_CHAIN_APPROX_SIMPLE);
 
@@ -151,40 +129,19 @@ public:
    drawContours(dst, contours, -1, Scalar::all(255), CV_FILLED);
 
    return dst;
-   //return redOnly;
-
-/*
-    assert(src.type() == CV_8UC3);
-    cv::Mat redOnly;
-    cv::inRange(src, cv::Scalar(0, 0, 0), cv::Scalar(25, 25, 25), redOnly);
-	//cvInRangeS(imgHSV, cvScalar(170,160,60), cvScalar(180,256,256), imgThresh); 
-    return redOnly;
-*/
-
 }
 
-
-/**
- * Rotate an image
- */
-void rotate(cv::Mat& src, double angle, cv::Mat& dst)
-{
-    int len = std::max(src.cols, src.rows);
-    cv::Point2f pt(len/2., len/2.);
-    cv::Mat r = cv::getRotationMatrix2D(pt, angle, 1.0);
-
-    cv::warpAffine(src, dst, r, cv::Size(len, len));
-}
-
+//Position callback function
 void posCb(const tum_ardrone::filter_stateConstPtr pose)
 {
 	tum_ardrone::filter_state state = *pose;
-	ddx = state.x;	  //Drone X
-	ddy = state.y;	  //Drone Y
-	ddz = state.z;	  //Drone Z
-	ddh = state.yaw;  //Drone Heading
+	ddx = state.x;	  //Drone's X
+	ddy = state.y;	  //Drone's Y
+	ddz = state.z;	  //Drone's Z
+	ddh = state.yaw;  //Drone's Heading
 }
 
+//Image callback function
 void imageCb(const sensor_msgs::ImageConstPtr& msg)
 {
     float drone_x,drone_y,drone_z,drone_h;
@@ -192,12 +149,12 @@ void imageCb(const sensor_msgs::ImageConstPtr& msg)
 	
     //ROS_INFO("Got %d images",image_stamp);
     image_stamp++;
-    //PTAM init
+    /*	
     if((image_stamp == key_frame1) || (image_stamp == key_frame2))
     {
 	initPTAM();
     }
-    
+    */
 
     drone_x = ddx;
     drone_y = ddy; 
@@ -215,26 +172,18 @@ void imageCb(const sensor_msgs::ImageConstPtr& msg)
       return;
     }
 
-    //if (cv_ptr->image.rows > 60 && cv_ptr->image.cols > 60)
-    //  cv::circle(cv_ptr->image, cv::Point(50, 50), 10, CV_RGB(255,0,0));
-
-    //cv::imshow(WINDOW, cv_ptr->image);
-
     cv::waitKey(3);
     
     image_pub_.publish(cv_ptr->toImageMsg());
 
-    cv::Mat pillar = pillarFilter(cv_ptr->image);
+    cv::Mat pillar = pillarFilter(cv_ptr->image);	//Color segmentation
 
     //cv::imshow("pillar", pillar);
     
     cv::Mat dst, cdst,rot;
-    //cv::Canny(pillar, dst, 100, 200, 3);
-    cv::Canny(pillar, dst, 120, 205, 3);
-    //cv::cvtColor(dst, cdst, CV_GRAY2BGR);
+    cv::Canny(pillar, dst, 120, 205, 3);	//Canny edge detector
 	
-    //ROTATE !!!!
-    //rotate(dst, -drone_h, rot);
+    //Rotate the image according to drone's heading
     Point2f src_center(dst.cols/2.0F, dst.rows/2.0F);
     Mat rot_mat = getRotationMatrix2D(src_center, drone_h, 1.0);
     warpAffine(dst, rot, rot_mat, dst.size());
@@ -244,11 +193,7 @@ void imageCb(const sensor_msgs::ImageConstPtr& msg)
 
     std::vector<cv::Vec4i> lines;
 
-    //cv::HoughLinesP(dst, lines, 1, CV_PI/180, 50, 50, 10 );
-    //cv::HoughLinesP(dst, lines, 1, CV_PI/2, 50, 50, 10 );
-    //cv::HoughLinesP(rot, lines, 1, CV_PI/2, 50, 50, 10 );
-    //cv::HoughLinesP(rot, lines, 1, CV_PI/2, 50, 75, 20 );
-    cv::HoughLinesP(rot, lines, 1, CV_PI/2, 50, 50, 20 );
+    cv::HoughLinesP(rot, lines, 1, CV_PI/2, 50, 50, 20 );	//Hough Transform
 
     for( size_t i = 0; i < lines.size(); i++ )
     {
@@ -329,9 +274,7 @@ void imageCb(const sensor_msgs::ImageConstPtr& msg)
   void initPTAM(){
 	std_msgs::String s;
 	s.data = Space_command.c_str();
-	//pthread_mutex_lock(&tum_ardrone_CS);
 	pubToPTAM.publish(s);
-	//pthread_mutex_unlock(&tum_ardrone_CS);
 	cout << "Init PTAM"<< endl;
 
   }
@@ -346,87 +289,3 @@ int main(int argc, char** argv)
   return 0;
 }
 
-/* PREVIOUS version of houghLine.cpp code
-
-#include <ros/ros.h>
-#include <image_transport/image_transport.h>
-#include <cv_bridge/cv_bridge.h>
-#include <sensor_msgs/image_encodings.h>
-#include <opencv2/imgproc/imgproc.hpp>
-#include <opencv2/highgui/highgui.hpp>
-
-namespace enc = sensor_msgs::image_encodings;
-
-static const char WINDOW[] = "Image window";
-
-class ImageConverter
-{
-  ros::NodeHandle nh_;
-  image_transport::ImageTransport it_;
-  image_transport::Subscriber image_sub_;
-  image_transport::Publisher image_pub_;
-  
-public:
-  ImageConverter()
-    : it_(nh_)
-  {
-    image_pub_ = it_.advertise("out", 1);
-    image_sub_ = it_.subscribe("in", 1, &ImageConverter::imageCb, this);
-
-    cv::namedWindow(WINDOW);
-  }
-
-  ~ImageConverter()
-  {
-    cv::destroyWindow(WINDOW);
-  }
-
-  void imageCb(const sensor_msgs::ImageConstPtr& msg)
-  {
-    cv_bridge::CvImagePtr cv_ptr;
-    try
-    {
-      cv_ptr = cv_bridge::toCvCopy(msg, enc::BGR8);
-    }
-    catch (cv_bridge::Exception& e)
-    {
-      ROS_ERROR("cv_bridge exception: %s", e.what());
-      return;
-    }
-
-    //if (cv_ptr->image.rows > 60 && cv_ptr->image.cols > 60)
-    //  cv::circle(cv_ptr->image, cv::Point(50, 50), 10, CV_RGB(255,0,0));
-
-    cv::imshow(WINDOW, cv_ptr->image);
-    cv::waitKey(3);
-    
-    image_pub_.publish(cv_ptr->toImageMsg());
-
-    //Hough Lines
-
-	cv::Mat dst, cdst;
-	cv::Canny(cv_ptr->image, dst, 50, 200, 3);
-	cv::cvtColor(dst, cdst, CV_GRAY2BGR);
-
-	std::vector<cv::Vec4i> lines;
-	//cv::HoughLinesP(dst, lines, 1, CV_PI/180, 50, 50, 10 );
-	//cv::HoughLinesP(dst, lines, 1, CV_PI/2, 50, 50, 10 );	//Horizontal
-	cv::HoughLinesP(dst, lines, 1, CV_PI, 50, 50, 10 );	//Vertical
-	for( size_t i = 0; i < lines.size(); i++ )
-	{
-	  cv::Vec4i l = lines[i];
-	  cv::line( cdst, cv::Point(l[0], l[1]), cv::Point(l[2], l[3]), cv::Scalar(0,0,255), 3, CV_AA);
-	}
-	cv::imshow("detected lines", cdst);
-  }
-};
-
-int main(int argc, char** argv)
-{
-  ros::init(argc, argv, "image_converter");
-  ImageConverter ic;
-  ros::spin();
-  return 0;
-}
-
-*/
